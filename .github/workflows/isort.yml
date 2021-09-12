@@ -1,0 +1,26 @@
+name: autoblack
+on: [pull_request, push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: Install Isort
+        run: pip install isort
+      - name: Run isort --atomic .
+        run: isort --atomic .
+      - name: If needed, commit isort
+        if: failure()
+        run: |
+          isort --atomic .
+          git config --global user.name 'isortbot'
+          git config --global user.email '28666420+danyduran@users.noreply.github.com'
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY
+          git checkout $GITHUB_HEAD_REF
+          git commit -am "fixup: Format Python code with Isort"
+          git push origin HEAD:${GITHUB_REF##*/} --force-with-lease
+          git status
